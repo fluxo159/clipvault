@@ -1,0 +1,11 @@
+node_modules/
+dist/
+artifacts/
+.DS_Store
+*.log
+
+CODEX.md
+.env
+.env.*
+*.pem
+*.key

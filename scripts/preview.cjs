@@ -1,0 +1,56 @@
+// Render the real UI against fixtures in a hidden Electron window.
+const { app, BrowserWindow } = require('electron');
+const path = require('node:path');
+const fs = require('node:fs');
+const assert = require('node:assert/strict');
+const output = path.join(__dirname, '..', 'artifacts', 'redesign');
+app.setPath('userData', path.join(app.getPath('temp'), 'clipvault-ui-preview'));
+app.whenReady().then(async () => {
+  app.dock?.hide();
+  fs.mkdirSync(output, {recursive: true});
+  const win = new BrowserWindow({show: false, width: 420, height: 540, frame: false,
+    webPreferences: {preload: path.join(__dirname, 'preview-preload.cjs'), contextIsolation: true}});
+  const errors = [];
+  win.webContents.on('console-message', (_event, level, message) => { if (level >= 3) errors.push(message); });
+  const run = script => win.webContents.executeJavaScript(`(() => { ${script} })()`);
+  const capture = async name => {
+    await new Promise(resolve => setTimeout(resolve, 180));
+    fs.writeFileSync(path.join(output, name + '.png'), (await win.webContents.capturePage()).toPNG());
+  };
+  await win.loadFile(path.join(__dirname, '..', 'src', 'index.html'));
+  await new Promise(resolve => setTimeout(resolve, 250));
+  assert.equal(await run('return document.querySelectorAll(".clip-item").length'), 5);
+  await capture('history-light');
+  await run('document.querySelector("[data-filter=url]").click()');
+  assert.equal(await run('return document.querySelectorAll(".clip-item").length'), 1);
+  await run('document.querySelector("[data-filter=text]").click()');
+  assert.equal(await run('return document.querySelectorAll(".clip-item").length'), 4);
+  await run('document.querySelector("[data-filter=image]").click()');
+  assert.equal(await run('return document.querySelectorAll(".clip-item").length'), 0);
+  await run('document.querySelector("[data-filter=all]").click()');
+  await run('document.documentElement.dataset.theme = "dark"');
+  await capture('history-dark');
+  await run('document.getElementById("btn-settings").click()');
+  await capture('settings-dark');
+  assert.equal(await run('return document.querySelector(".settings-content").scrollWidth <= document.querySelector(".settings-content").clientWidth'), true);
+  await run('document.dispatchEvent(new KeyboardEvent("keydown", {key:"Escape", bubbles:true}))');
+  assert.equal(await run('return document.getElementById("settings-modal").classList.contains("hidden")'), true);
+  await run('document.querySelector("[data-tab=stats]").click()');
+  await capture('stats-dark');
+  await run('document.documentElement.dataset.theme = "light"; document.getElementById("btn-export").click()');
+  await capture('export-light');
+  await run('document.getElementById("modal-close").click(); document.querySelector("[data-tab=all]").click(); const search = document.getElementById("search-input"); search.value = "нет такого текста"; search.dispatchEvent(new Event("input"))');
+  await capture('search-empty-light');
+  assert.equal(await run('return document.querySelector(".empty-title").textContent'), 'Ничего не найдено');
+  await run('const search = document.getElementById("search-input"); search.value = ""; search.dispatchEvent(new Event("input"))');
+  await new Promise(resolve => setTimeout(resolve, 200));
+  await run('document.querySelector("[data-tab=pinned]").click()');
+  assert.equal(await run('return document.querySelectorAll(".clip-item").length'), 1);
+  await win.loadFile(path.join(__dirname, '..', 'src', 'widget.html'));
+  win.setSize(280, 380);
+  await capture('widget-light');
+  assert.equal(await run('return document.querySelectorAll(".widget-item").length'), 5);
+  assert.deepEqual(errors, []);
+  console.log('UI checks passed. Screenshots: ' + output);
+  app.quit();
+}).catch(error => { console.error(error); app.exit(1); });

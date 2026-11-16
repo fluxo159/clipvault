@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="ru" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; font-src 'self'; img-src 'self' data: file:;">
+  <title>ClipVault</title>
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body class="widget-body">
+
+  <div class="widget-container">
+    <div class="widget-header" id="widget-header">
+      <div class="widget-title">
+        <span class="logo-icon" data-icon="clipboard"></span>
+        <span>ClipVault</span>
+      </div>
+      <div class="widget-drag-handle">
+        <span class="widget-drag-dot"></span>
+        <span class="widget-drag-dot"></span>
+        <span class="widget-drag-dot"></span>
+      </div>
+    </div>
+    
+    <div class="widget-content" id="widget-list">
+      <!-- Элементы будут добавляться сюда динамически -->
+      <div class="widget-empty">
+        <div class="widget-empty-icon" data-icon="clipboard"></div>
+        <div>История пуста</div>
+      </div>
+    </div>
+  </div>
+
+  <script src="./icons.js"></script>
+  <script src="./widget.js"></script>
+</body>
+</html>

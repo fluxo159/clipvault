@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self'; font-src 'self'; img-src 'self' data: file:; connect-src 'none'; object-src 'none'; frame-src 'none'; script-src 'self'">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ClipVault</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div id="app">
+    <!-- Header -->
+    <header id="header" class="hidden">
+      <div class="search-container">
+        <svg class="search-icon" width="15" height="15" viewBox="0 0 16 16" fill="none">
+          <circle cx="7" cy="7" r="5.5" stroke="currentColor" stroke-width="1.5"/>
+          <path d="M11 11l3.5 3.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+        <input type="text" aria-label="Поиск по истории" id="search-input" class="search-input" placeholder="Найти в буфере обмена" autocomplete="off" spellcheck="false">
+        <kbd class="search-shortcut">⌘F</kbd>
+      </div>
+    </header>
+
+    <!-- Tabs -->
+    <nav id="tabs">
+      <button class="tab active" data-tab="all">
+        
+        <span class="tab-label">История</span>
+        <span class="tab-count" id="count-all">0</span>
+      </button>
+      <button class="tab" data-tab="pinned">
+        
+        <span class="tab-label">Избранное</span>
+        <span class="tab-count" id="count-pinned">0</span>
+      </button>
+      <button class="tab" data-tab="stats">
+        
+        <span class="tab-label">Обзор</span>
+      </button>
+    </nav>
+
+    <nav id="type-filters" aria-label="Тип содержимого">
+      <button class="type-filter active" data-filter="all" aria-pressed="true">Все <span id="filter-count">0</span></button>
+      <button class="type-filter" data-filter="text" aria-pressed="false">Текст</button>
+      <button class="type-filter" data-filter="image" aria-pressed="false">Фото</button>
+      <button class="type-filter" data-filter="url" aria-pressed="false">Ссылки</button>
+    </nav>
+
+    <!-- Content -->
+    <main id="content">
+      <!-- Clip List -->
+      <div id="clip-list" class="clip-list"></div>
+
+      <!-- Stats View -->
+      <div id="stats-view" class="stats-view hidden">
+        <div class="stats-cards">
+          <div class="stat-card">
+            <div class="stat-value" id="stat-total">0</div>
+            <div class="stat-label">Всего скопировано</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value" id="stat-today">0</div>
+            <div class="stat-label">Сегодня</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value" id="stat-pastes">0</div>
+            <div class="stat-label">Повторно скопировано</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value" id="stat-pinned-count">0</div>
+            <div class="stat-label">Закреплено</div>
+          </div>
+        </div>
+
+        <div class="stats-section">
+          <h3 class="stats-section-title">Активность за 7 дней</h3>
+          <div class="chart-container" id="chart-container">
+            <svg id="activity-chart" width="100%" height="120" viewBox="0 0 370 120"></svg>
+          </div>
+        </div>
+
+        <div class="stats-section">
+          <h3 class="stats-section-title">По типам</h3>
+          <div id="type-stats" class="type-stats"></div>
+        </div>
+
+        <div class="stats-section">
+          <h3 class="stats-section-title">Часто используемые</h3>
+          <div id="top-used" class="top-used"></div>
+        </div>
+      </div>
+
+      <!-- Empty State -->
+      <div id="empty-state" class="empty-state hidden">
+        <div class="empty-icon" data-icon="clipboard"></div>
+        <div class="empty-title">Пока пусто</div>
+        <div class="empty-text">Скопируйте что-нибудь, и оно появится здесь</div>
+      </div>
+    </main>
+
+    <!-- Status Bar -->
+    <footer id="statusbar">
+      <div class="status-left">
+        <button id="btn-settings" class="icon-btn footer-settings" title="Настройки" aria-label="Настройки" data-icon="settings"></button>
+        <span id="status-info" class="hidden">Готово</span>
+      </div>
+      <div class="status-right">          <button id="btn-clear" class="icon-btn icon-btn-danger" title="Очистить историю">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+              <path d="M2 4h12M5.333 4V2.667a1.333 1.333 0 011.334-1.334h2.666a1.333 1.333 0 011.334 1.334V4M12 4v9.333a1.333 1.333 0 01-1.333 1.334H5.333A1.333 1.333 0 014 13.333V4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </button>
+        <kbd id="status-shortcut">⌘⇧V</kbd>
+      </div>
+    </footer>
+
+    <!-- Export Modal -->
+    <div id="export-modal" class="modal hidden">
+      <div class="modal-backdrop"></div>
+      <div class="modal-content">
+        <h3 class="modal-title">Экспорт истории</h3>
+        <div class="export-options">
+          <button class="export-btn" data-format="json">
+            <span class="export-btn-icon">{ }</span>
+            <span class="export-btn-label">JSON</span>
+            <span class="export-btn-desc">Полные данные</span>
+          </button>
+          <button class="export-btn" data-format="csv">
+            <span class="export-btn-icon" data-icon="table"></span>
+            <span class="export-btn-label">CSV</span>
+            <span class="export-btn-desc">Таблица</span>
+          </button>
+          <button class="export-btn" data-format="txt">
+            <span class="export-btn-icon" data-icon="text"></span>
+            <span class="export-btn-label">TXT</span>
+            <span class="export-btn-desc">Простой текст</span>
+          </button>
+        </div>
+        <button class="modal-close" id="modal-close">Отмена</button>
+      </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="toast hidden">
+      <span id="toast-text">Скопировано!</span>
+    </div>
+
+    <!-- Confirm Dialog -->
+    <div id="confirm-dialog" class="modal hidden">
+      <div class="modal-backdrop"></div>
+      <div class="modal-content modal-content-sm">
+        <h3 class="modal-title" id="confirm-title">Подтверждение</h3>
+        <p class="modal-text" id="confirm-text">Вы уверены?</p>
+        <div class="modal-actions">
+          <button class="btn btn-secondary" id="confirm-cancel">Отмена</button>
+          <button class="btn btn-danger" id="confirm-ok">Удалить</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Settings Modal -->
+  <div id="settings-modal" class="modal hidden">
+    <div class="modal-backdrop"></div>
+    <div class="modal-content settings-content">
+
+      <div class="settings-header">
+        <h3 class="modal-title">Настройки</h3>
+        <button class="icon-btn" id="settings-close" aria-label="Закрыть настройки">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+            <path d="M1 1l12 12M13 1L1 13" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+          </svg>
+        </button>
+      </div>
+
+      <div class="settings-section settings-row">
+        <label class="settings-section-title" for="theme-select">Оформление</label>
+        <select id="theme-select" class="theme-select" aria-label="Оформление">
+          <option value="system">Как в системе</option>
+          <option value="light">Светлое</option>
+          <option value="dark">Тёмное</option>
+        </select>
+      </div>
+      <div class="settings-divider"></div>
+
+      <!-- Горячая клавиша -->
+      <div class="settings-section">
+        <div class="settings-section-title">Горячая клавиша</div>
+        <div class="settings-section-desc">Нажмите на поле и введите нужное сочетание</div>
+        <div class="shortcut-recorder" id="shortcut-recorder">
+          <button type="button" class="shortcut-display" id="shortcut-display" aria-label="Изменить горячую клавишу">
+            <span id="shortcut-keys">⌘ ⇧ V</span>
+          </button>
+          <div class="shortcut-status" id="shortcut-status">Нажмите чтобы изменить</div>
+        </div>
+        <div class="shortcut-actions">
+          <button class="btn btn-secondary btn-sm" id="btn-reset-shortcut">По умолчанию</button>
+          <button class="btn btn-primary btn-sm hidden" id="btn-save-shortcut">Сохранить</button>
+          <button class="btn btn-secondary btn-sm hidden" id="btn-cancel-shortcut">Отмена</button>
+        </div>
+        <div class="shortcut-hint">Поддерживаются: Cmd, Ctrl, Alt, Shift + любая клавиша</div>
+      </div>
+
+      <div class="settings-divider"></div>
+
+      <!-- Автозапуск -->
+      <div class="settings-section">
+        <div class="settings-row">
+          <div>
+            <div class="settings-section-title">Автозапуск</div>
+            <div class="settings-section-desc">Запускать ClipVault при входе в macOS</div>
+          </div>
+          <label class="toggle" id="autostart-toggle-label">
+            <input type="checkbox" id="autostart-toggle">
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+      </div>
+
+      <div class="settings-divider"></div>
+
+      <!-- Настольный виджет -->
+      <div class="settings-section">
+        <div class="settings-row">
+          <div>
+            <div class="settings-section-title">Настольный виджет</div>
+            <div class="settings-section-desc">Показывать виджет на рабочем столе</div>
+          </div>
+          <label class="toggle" id="widget-toggle-label">
+            <input type="checkbox" id="widget-toggle">
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+      </div>
+
+      <div class="settings-divider"></div>
+
+      <div class="settings-section settings-row">
+        <div class="settings-section-title">История</div>
+        <button id="btn-export" class="btn btn-secondary btn-sm">Экспортировать</button>
+      </div>
+      <div class="settings-divider"></div>
+
+      <!-- Лимит истории -->
+      <div class="settings-section">
+        <div class="settings-section-title">Лимит истории</div>
+        <div class="settings-section-desc">Максимум элементов в истории</div>
+        <div class="settings-row history-limit-row">
+          <input type="range" id="history-limit-slider" min="50" max="1000" step="50" value="500" class="range-slider">
+          <span class="range-value" id="history-limit-value">500</span>
+        </div>
+        <button class="btn btn-secondary btn-sm" id="btn-save-limit">Сохранить</button>
+      </div>
+
+    </div>
+  </div>
+
+  <script src="./icons.js"></script>
+  <script src="./renderer.js"></script>
+</body>
+</html>
