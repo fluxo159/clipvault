@@ -1,5 +1,7 @@
 <p align="center"><img src="docs/cover.svg" alt="ClipVault" width="100%"></p>
 
+[![Checks](https://github.com/fluxo159/clipvault/actions/workflows/checks.yml/badge.svg)](https://github.com/fluxo159/clipvault/actions/workflows/checks.yml)
+
 # ClipVault
 
 **Менеджер буфера обмена для macOS на Electron.** История текста, ссылок, цветов и изображений в окне из строки меню.
